@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="response-detail">
+    <h2>{{ survey_response.survey.title }}</h2>
+    <div class="response-info">
+        <p>提交人：{{ survey_response.student.username }}</p>
+        <p>提交时间：{{ survey_response.submitted_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+    </div>
+    
+    <div class="answers">
+        {% for question in survey_response.survey.questions|sort(attribute='order') %}
+        <div class="question-block">
+            <h3>{{ loop.index }}. {{ question.question_text }}</h3>
+            
+            {% if question.question_type == 'single' %}
+                <div class="options-list">
+                    {% for option in question.options|sort(attribute='order') %}
+                        <div class="option">
+                            <input type="radio" disabled
+                                   {% if answers.get(question.id) == option.id %}checked{% endif %}
+                            >
+                            <label>{{ option.option_text }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% elif question.question_type == 'multiple' %}
+                <div class="options-list">
+                    {% for option in question.options|sort(attribute='order') %}
+                        <div class="option">
+                            <input type="checkbox" disabled
+                                   {% if option.id in answers.get(question.id, []) %}checked{% endif %}
+                            >
+                            <label>{{ option.option_text }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-answer">
+                    <p>{{ answers.get(question.id, '') }}</p>
+                </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="actions">
+        <a href="{{ url_for('dashboard') }}" class="btn">返回主页</a>
+    </div>
+</div>
+{% endblock %} 

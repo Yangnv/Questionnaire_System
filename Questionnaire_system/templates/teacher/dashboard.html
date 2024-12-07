@@ -1,0 +1,539 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <h2 class="dashboard-title">教师控制面板</h2>
+    <div class="actions">
+        <a href="{{ url_for('create_survey') }}" class="btn btn-create">
+            <span class="icon">📝</span> 创建新问卷
+        </a>
+        <a href="{{ url_for('view_feedbacks') }}" class="btn btn-feedback">
+            <span class="icon">💬</span> 查看意见反馈
+        </a>
+    </div>
+    
+    <h3 class="section-title">我的问卷列表（点击问卷题目可查看统计数据）</h3>
+    <div class="survey-list">
+        {% if surveys %}
+            {% for survey in surveys %}
+                <div class="survey-item" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+                    <div class="survey-header">
+                        <a href="{{ url_for('survey_statistics', survey_id=survey.id) }}" class="survey-title">
+                            {{ survey.title }}
+                        </a>
+                        <div class="survey-info">
+                            <span class="create-time">
+                                <span class="icon"></span>
+                                {{ survey.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                            </span>
+                            <div class="status-control">
+                                <span class="status-badge {% if survey.is_active %}active{% else %}inactive{% endif %}">
+                                    {% if survey.is_active %}已发布{% else %}已隐藏{% endif %}
+                                </span>
+                                <form method="POST" action="{{ url_for('toggle_survey_status', survey_id=survey.id) }}" class="status-form">
+                                    <input type="checkbox" 
+                                           class="status-checkbox" 
+                                           {% if survey.is_active %}checked{% endif %}
+                                           onchange="this.form.submit()">
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="survey-actions">
+                        <a href="{{ url_for('edit_survey', survey_id=survey.id) }}" class="action-btn edit">
+                            <span class="icon">✏️</span> 编辑
+                        </a>
+                        <a href="{{ url_for('view_responses', survey_id=survey.id) }}" class="action-btn view">
+                            <span class="icon">📊</span> 查看答卷
+                        </a>
+                        <button onclick="showQRCode('{{ survey.code }}')" class="action-btn qr">
+                            <span class="icon">📱</span> 查看二维码
+                        </button>
+                        <form method="POST" action="{{ url_for('delete_survey', survey_id=survey.id) }}" 
+                              class="delete-form" 
+                              onsubmit="event.preventDefault(); showDeleteConfirm(this);">
+                            <button type="submit" class="action-btn delete">
+                                <span class="icon">🗑️</span> 删除
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <span class="icon">📝</span>
+                <p>暂无问卷，点击上方按钮创建新问卷</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 添加二维码模态框 -->
+<div id="qrModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>问卷二维码</h3>
+        <div id="qrcode-container"></div>
+        <p class="qr-hint">扫描二维码即可参与问卷调查</p>
+    </div>
+</div>
+
+<!-- 添加确认删除的模态框 -->
+<div id="deleteConfirmModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>删除确认</h3>
+            <span class="close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="warning-icon">⚠️</div>
+            <p>确定要删除这份问卷吗？</p>
+            <p class="warning-text">此操作不可恢复！</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeDeleteModal()">取消</button>
+            <button class="btn-confirm" onclick="confirmDelete()">确认删除</button>
+        </div>
+    </div>
+</div>
+
+<!-- 在页面底部添加JavaScript代码 -->
+<script>
+function showQRCode(surveyCode) {
+    const modal = document.getElementById('qrModal');
+    const container = document.getElementById('qrcode-container');
+    const surveyUrl = `${window.location.origin}/survey/${surveyCode}`;
+    
+    // 获取二维码图片
+    fetch(`/generate_qr/${surveyCode}`)
+        .then(response => response.json())
+        .then(data => {
+            container.innerHTML = `<img src="data:image/png;base64,${data.qr_code}" alt="问卷二维码">`;
+            modal.style.display = "block";
+        });
+}
+
+// 关闭模态框
+document.querySelector('.close').onclick = function() {
+    document.getElementById('qrModal').style.display = "none";
+}
+
+window.onclick = function(event) {
+    const modal = document.getElementById('qrModal');
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
+
+let currentDeleteForm = null;
+
+function showDeleteConfirm(form) {
+    currentDeleteForm = form;
+    document.getElementById('deleteConfirmModal').style.display = 'block';
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteConfirmModal').style.display = 'none';
+    currentDeleteForm = null;
+}
+
+function confirmDelete() {
+    if (currentDeleteForm) {
+        currentDeleteForm.submit();
+    }
+    closeDeleteModal();
+}
+
+// 点击模态框外部关闭模态框
+window.onclick = function(event) {
+    const modal = document.getElementById('deleteConfirmModal');
+    if (event.target == modal) {
+        closeDeleteModal();
+    }
+}
+</script>
+
+<style>
+/* 二维码模态框样式 */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 300px;
+    text-align: center;
+    border-radius: 8px;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: black;
+}
+
+#qrcode-container img {
+    max-width: 200px;
+    margin: 20px 0;
+}
+
+.qr-hint {
+    color: #666;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+/* 整体容器样式 */
+.dashboard {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    animation: fadeIn 0.5s ease;
+}
+
+/* 标题样式 */
+.dashboard-title {
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 28px;
+    position: relative;
+    padding-bottom: 10px;
+}
+
+.dashboard-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(to right, #3498db, #2ecc71);
+    border-radius: 3px;
+}
+
+/* 操作按钮样式 */
+.actions {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+    justify-content: center;
+}
+
+.btn {
+    padding: 12px 25px;
+    border-radius: 25px;
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    font-size: 16px;
+}
+
+.btn-create {
+    background: linear-gradient(to right, #3498db, #2980b9);
+}
+
+.btn-feedback {
+    background: linear-gradient(to right, #2ecc71, #27ae60);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* 问卷列表样式 */
+.survey-list {
+    margin-top: 20px;
+}
+
+.survey-item {
+    background: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #e0e0e0;
+}
+
+.survey-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+}
+
+.survey-header {
+    margin-bottom: 15px;
+}
+
+.survey-title {
+    color: #2c3e50;
+    font-size: 18px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.survey-title:hover {
+    color: #3498db;
+}
+
+.survey-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    color: #7f8c8d;
+    font-size: 14px;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-badge.active {
+    background: linear-gradient(45deg, #2ecc71, #27ae60);
+    color: white;
+}
+
+.status-badge.inactive {
+    background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+    color: white;
+}
+
+.survey-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    padding: 8px 15px;
+    border-radius: 20px;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s ease;
+}
+
+.action-btn.edit {
+    background: linear-gradient(to right, #3498db, #2980b9);
+}
+
+.action-btn.view {
+    background: linear-gradient(to right, #9b59b6, #8e44ad);
+}
+
+.action-btn.qr {
+    background: linear-gradient(to right, #f1c40f, #f39c12);
+}
+
+.action-btn.delete {
+    background: linear-gradient(to right, #e74c3c, #c0392b);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* 空状态样式 */
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    color: #7f8c8d;
+}
+
+.empty-state .icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .dashboard {
+        padding: 15px;
+    }
+    
+    .actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .survey-actions {
+        flex-direction: column;
+    }
+    
+    .action-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* 模态框样式 */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 25px;
+    width: 400px;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    animation: slideIn 0.3s ease;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.modal-header h3 {
+    color: #e74c3c;
+    margin: 0;
+    font-size: 20px;
+}
+
+.close {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close:hover {
+    color: #e74c3c;
+}
+
+.modal-body {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.warning-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    animation: shake 0.5s ease;
+}
+
+.warning-text {
+    color: #e74c3c;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    padding-top: 20px;
+    border-top: 2px solid #f0f0f0;
+}
+
+.btn-cancel,
+.btn-confirm {
+    padding: 10px 25px;
+    border: none;
+    border-radius: 25px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-cancel {
+    background: #f8f9fa;
+    color: #666;
+}
+
+.btn-confirm {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-cancel:hover,
+.btn-confirm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+</style>
+{% endblock %} 

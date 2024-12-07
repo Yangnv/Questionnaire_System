@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="profile-container">
+    <h2>个人信息</h2>
+    
+    <div class="info-section">
+        <h3>基本信息</h3>
+        <div class="info-item">
+            <label>用户名：</label>
+            <span>{{ user.username }}</span>
+            <button onclick="showEditModal('username')" class="edit-btn">修改</button>
+        </div>
+        <div class="info-item">
+            <label>学号：</label>
+            <span>{{ user.student_id }}</span>
+            <button onclick="showEditModal('student_id')" class="edit-btn">修改</button>
+        </div>
+        <div class="info-item">
+            <label>姓名：</label>
+            <span>{{ user.real_name }}</span>
+            <button onclick="showEditModal('real_name')" class="edit-btn">修改</button>
+        </div>
+        <div class="info-item">
+            <button onclick="showEditModal('password')" class="change-password-btn">修改密码</button>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑模态框 -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">修改信息</h3>
+        </div>
+        <div class="modal-body">
+            <form id="editForm" method="POST">
+                <input type="hidden" id="editType" name="edit_type">
+                <div class="form-group" id="newValueGroup">
+                    <label id="newValueLabel">新值：</label>
+                    <input type="text" id="newValue" name="new_value" required>
+                </div>
+                <div class="form-group" id="passwordGroup">
+                    <label>验证密码：</label>
+                    <input type="password" name="password" required>
+                </div>
+                <div class="form-group" id="newPasswordGroup">
+                    <label>新密码：</label>
+                    <input type="password" name="new_password">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="closeModal()" class="btn btn-secondary">取消</button>
+                    <button type="submit" class="btn btn-primary">确认</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.profile-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.info-section {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.info-item {
+    margin-bottom: 15px;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+}
+
+.info-item label {
+    width: 100px;
+    color: #666;
+}
+
+.info-item span {
+    flex: 1;
+}
+
+.edit-btn, .change-password-btn {
+    padding: 5px 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.edit-btn:hover, .change-password-btn:hover {
+    background-color: #0056b3;
+}
+
+/* 模态框样式 */
+.modal {
+    display: none;  /* 初始状态隐藏 */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.modal.show {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 400px;
+}
+
+#newPasswordGroup, #passwordGroup {
+    display: none;  /* 初始状态隐藏 */
+}
+</style>
+
+<script>
+function showEditModal(type) {
+    const modal = document.getElementById('editModal');
+    const editType = document.getElementById('editType');
+    const modalTitle = document.getElementById('modalTitle');
+    const newValueLabel = document.getElementById('newValueLabel');
+    const newValueGroup = document.getElementById('newValueGroup');
+    const newPasswordGroup = document.getElementById('newPasswordGroup');
+    const passwordGroup = document.getElementById('passwordGroup');
+    
+    editType.value = type;
+    
+    if (type === 'password') {
+        modalTitle.textContent = '修改密码';
+        newValueGroup.style.display = 'none';
+        newPasswordGroup.style.display = 'block';
+        passwordGroup.style.display = 'block';
+    } else {
+        newValueGroup.style.display = 'block';
+        newPasswordGroup.style.display = 'none';
+        
+        if (type === 'username') {
+            modalTitle.textContent = '修改用户名';
+            newValueLabel.textContent = '新用户名：';
+            passwordGroup.style.display = 'none';
+        } else {
+            passwordGroup.style.display = 'block';
+            if (type === 'student_id') {
+                modalTitle.textContent = '修改学号';
+                newValueLabel.textContent = '新学号：';
+            } else {
+                modalTitle.textContent = '修改姓名';
+                newValueLabel.textContent = '新姓名：';
+            }
+        }
+    }
+    
+    modal.classList.add('show');
+}
+
+function closeModal() {
+    const modal = document.getElementById('editModal');
+    modal.classList.remove('show');
+}
+
+// 点击模态框外部关闭模态框
+document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeModal();
+    }
+});
+</script>
+{% endblock %} 

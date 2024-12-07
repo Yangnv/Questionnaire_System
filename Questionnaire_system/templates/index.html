@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="home-container">
+    <div class="header">
+        <div class="page-title">
+            <span class="title-text">问卷调查系统</span>
+        </div>
+        <div class="auth-buttons">
+            <a href="{{ url_for('register') }}" class="auth-btn">用户注册</a>
+            <a href="{{ url_for('login') }}" class="auth-btn">用户登录</a>
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="image-container">
+            <img src="{{ url_for('serve_image', filename='school.jpg') }}" alt="计算机科学与技术学院" class="school-image">
+        </div>
+    </div>
+</div>
+
+<style>
+.home-container {
+    min-height: 100vh;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    position: relative;
+    z-index: 2;
+}
+
+.page-title {
+    display: flex;
+    align-items: center;
+}
+
+.title-text {
+    font-size: 24px;
+    color: #000;
+    font-family: "楷体", KaiTi, serif;
+    font-weight: bold;
+    background-color: #f8f9fa;
+    padding: 10px 25px;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    cursor: default;
+}
+
+.title-text:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    background-color: #e9ecef;
+}
+
+.auth-buttons {
+    display: flex;
+    gap: 20px;
+}
+
+@keyframes textColorChange {
+    0% { color: #ff6b6b; }
+    25% { color: #4ecdc4; }
+    50% { color: #45b7d1; }
+    75% { color: #96c93d; }
+    100% { color: #ff6b6b; }
+}
+
+@keyframes bgColorChange {
+    0% { background-color: #ffe0e0; }
+    25% { background-color: #e0f5f3; }
+    50% { background-color: #e0f0f5; }
+    75% { background-color: #edf5e0; }
+    100% { background-color: #ffe0e0; }
+}
+
+.auth-btn {
+    display: inline-block;
+    padding: 20px 50px;
+    text-decoration: none;
+    border-radius: 25px;
+    font-size: 32px;
+    transition: all 0.3s ease;
+    transform: translateY(0);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    font-family: "楷体", KaiTi, serif;
+    font-weight: bold;
+    animation: textColorChange 20s infinite;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    animation: bgColorChange 20s infinite;
+    z-index: -1;
+}
+
+.auth-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    filter: brightness(0.95);
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    padding: 20px;
+    position: relative;
+    margin-top: -30px;
+}
+
+.image-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.school-image {
+    width: 180%;
+    max-height: 80vh;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 1;
+}
+</style>
+{% endblock %} 

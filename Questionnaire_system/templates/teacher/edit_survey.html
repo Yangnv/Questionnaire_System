@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="survey-editor">
+    <h2 class="page-title">编辑问卷</h2>
+    <form method="POST" id="survey-form">
+        <div class="form-group">
+            <label>问卷标题：</label>
+            <input type="text" name="title" value="{{ survey.title }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="is_active" {% if survey.is_active %}checked{% endif %}>
+                开放问卷
+            </label>
+        </div>
+        
+        <div id="questions-container">
+            {% for question in survey.questions|sort(attribute='order') %}
+            <div class="question-block">
+                <div class="form-group">
+                    <div class="question-header">
+                        <label>问题{{ loop.index }}：</label>
+                        <select name="question_types[]" class="question-type-select">
+                            <option value="single" {% if question.question_type == 'single' %}selected{% endif %}>单选题</option>
+                            <option value="multiple" {% if question.question_type == 'multiple' %}selected{% endif %}>多选题</option>
+                            <option value="text" {% if question.question_type == 'text' %}selected{% endif %}>文本题</option>
+                        </select>
+                        <button type="button" class="remove-question-btn">删除问题</button>
+                    </div>
+                    <input type="text" name="questions[]" value="{{ question.question_text }}" required>
+                </div>
+                <div class="options-container" {% if question.question_type == 'text' %}style="display: none;"{% endif %}>
+                    {% set outer_loop = loop %}
+                    {% for option in question.options|sort(attribute='order') %}
+                    <div class="form-group option-group">
+                        <div class="option-header">
+                            <label>选项{{ loop.index }}：</label>
+                            <button type="button" class="remove-option-btn">删除选项</button>
+                        </div>
+                        <input type="text" name="options[{{ outer_loop.index0 }}][]" 
+                               value="{{ option.option_text }}" 
+                               {% if question.question_type != 'text' %}required{% endif %}>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="add-option-btn" {% if question.question_type == 'text' %}style="display: none;"{% endif %}>添加选项</button>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="form-actions">
+            <button type="button" id="add-question-btn">
+                <span class="icon">+</span> 添加问题
+            </button>
+            <button type="submit" class="save-btn">
+                <span class="icon">💾</span> 保存问卷
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+.survey-editor {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    animation: fadeIn 0.5s ease;
+}
+
+.page-title {
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 28px;
+    position: relative;
+    padding-bottom: 10px;
+}
+
+.page-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(to right, #3498db, #2ecc71);
+    border-radius: 3px;
+}
+
+.question-block {
+    background: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+}
+
+.question-block:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+}
+
+.question-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #34495e;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 4px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    background-color: #f8f9fa;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #3498db;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.option-group {
+    margin-left: 20px;
+    position: relative;
+}
+
+.option-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.add-option-btn,
+.add-question-btn {
+    background: linear-gradient(to right, #2ecc71, #27ae60);
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.remove-question-btn,
+.remove-option-btn {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.remove-question-btn:hover,
+.remove-option-btn:hover {
+    background-color: #fee;
+    transform: scale(1.1);
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    justify-content: center;
+}
+
+.save-btn {
+    background: linear-gradient(to right, #3498db, #2980b9);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.save-btn:hover {
+    background: linear-gradient(to right, #2980b9, #2472a4);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.icon {
+    font-size: 16px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .survey-editor {
+        padding: 15px;
+    }
+    
+    .question-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .save-btn,
+    .add-question-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+.alert-box {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 1000;
+    animation: fadeInOut 2s ease forwards;
+}
+
+@keyframes fadeInOut {
+    0%, 100% { opacity: 0; }
+    10%, 90% { opacity: 1; }
+}
+</style>
+
+<script>
+function showAlert(message) {
+    const alertBox = document.createElement('div');
+    alertBox.className = 'alert-box';
+    alertBox.textContent = message;
+    document.body.appendChild(alertBox);
+
+    setTimeout(() => {
+        alertBox.remove();
+    }, 2000); // 2秒后自动关闭
+}
+
+document.getElementById('add-question-btn').addEventListener('click', function() {
+    const questionCount = document.querySelectorAll('.question-block').length;
+    const questionBlock = document.createElement('div');
+    questionBlock.className = 'question-block';
+    questionBlock.innerHTML = `
+        <div class="form-group">
+            <div class="question-header">
+                <label>问题${questionCount + 1}：</label>
+                <select name="question_types[]" class="question-type-select">
+                    <option value="single">单选题</option>
+                    <option value="multiple">多选题</option>
+                    <option value="text">文本题</option>
+                </select>
+                <button type="button" class="remove-question-btn">删除问题</button>
+            </div>
+            <input type="text" name="questions[]" required>
+        </div>
+        <div class="options-container">
+            <div class="form-group option-group">
+                <div class="option-header">
+                    <label>选项1：</label>
+                    <button type="button" class="remove-option-btn">删除选项</button>
+                </div>
+                <input type="text" name="options[${questionCount}][]" required placeholder="请输入选项内容...">
+            </div>
+        </div>
+        <button type="button" class="add-option-btn">添加选项</button>
+    `;
+    document.getElementById('questions-container').appendChild(questionBlock);
+});
+
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('add-option-btn')) {
+        const questionBlock = e.target.closest('.question-block');
+        const questionIndex = Array.from(document.querySelectorAll('.question-block')).indexOf(questionBlock);
+        const optionsContainer = questionBlock.querySelector('.options-container');
+        const optionCount = optionsContainer.children.length;
+        
+        const optionGroup = document.createElement('div');
+        optionGroup.className = 'form-group option-group';
+        optionGroup.innerHTML = `
+            <div class="option-header">
+                <label>选项${optionCount + 1}：</label>
+                <button type="button" class="remove-option-btn">删除选项</button>
+            </div>
+            <input type="text" name="options[${questionIndex}][]" required placeholder="请输入选项内容...">
+        `;
+        optionsContainer.appendChild(optionGroup);
+    }
+    
+    if (e.target.classList.contains('remove-question-btn')) {
+        const questionBlocks = document.querySelectorAll('.question-block');
+        if (questionBlocks.length > 1) {
+            const removedBlock = e.target.closest('.question-block');
+            removedBlock.remove();
+            // 更新剩余问题的序号和选项的name属性
+            document.querySelectorAll('.question-block').forEach((block, index) => {
+                block.querySelector('label').textContent = `问题${index + 1}：`;
+                block.querySelectorAll('.option-group input').forEach(input => {
+                    input.name = `options[${index}][]`;
+                });
+            });
+        } else {
+            showAlert('问卷至少需要一个问题！');
+        }
+    }
+    
+    if (e.target.classList.contains('remove-option-btn')) {
+        const optionsContainer = e.target.closest('.options-container');
+        if (optionsContainer.children.length > 1) {
+            e.target.closest('.option-group').remove();
+            // 更新选项序号
+            optionsContainer.querySelectorAll('.option-group').forEach((group, index) => {
+                group.querySelector('label').textContent = `选项${index + 1}：`;
+            });
+        } else {
+            showAlert('问题至少需要一个选项！');
+        }
+    }
+});
+
+// 监听问题类型变化
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('question-type-select')) {
+        const questionBlock = e.target.closest('.question-block');
+        const optionsContainer = questionBlock.querySelector('.options-container');
+        const addOptionBtn = questionBlock.querySelector('.add-option-btn');
+        
+        if (e.target.value === 'text') {
+            optionsContainer.style.display = 'none';
+            addOptionBtn.style.display = 'none';
+            optionsContainer.querySelectorAll('input').forEach(input => input.required = false);
+        } else {
+            optionsContainer.style.display = 'block';
+            addOptionBtn.style.display = 'block';
+            optionsContainer.querySelectorAll('input').forEach(input => input.required = true);
+        }
+    }
+});
+
+// 提交前处理表单数据
+document.getElementById('survey-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // 更新所有问题的选项name属性，确保索引正确
+    document.querySelectorAll('.question-block').forEach((block, questionIndex) => {
+        block.querySelectorAll('.option-group input').forEach(input => {
+            input.name = `options[${questionIndex}][]`;
+        });
+    });
+    
+    this.submit();
+});
+</script>
+{% endblock %} 
