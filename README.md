@@ -32,7 +32,7 @@
 
 3.2
 
-修正了 view_response.html 文件第 48 行的代码问题，将 <a href="{{ url_for('dashboard') }}" class="btn">返回主页</a> 替换为正确的实现。
+修正了 view_response.html 文件第 48 行的代码问题，将返回主页替换为正确的实现。
 
 3.3
 
